@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/local/bin/bash
 
 ## pia v0.5 Copyright (C) 2017 d4rkcat (thed4rkcat@yandex.com)
 #
@@ -54,8 +54,8 @@ fupdate()						# Update the PIA openvpn files.
 	for CONFIGFILE in $VPNPATH/*.ovpn;do
 		CNT=0
 		for OLD in "${OLDS[@]}";do 
-			sed -i "s%$OLD%${NEWS[$CNT]}%g" $CONFIGFILE
-			((++CNT))
+		      sed -i -e "s%$OLD.*%${NEWS[$CNT]}%g" $CONFIGFILE
+		      ((++CNT))
 		done
 		echo -e "auth-nocache\nlog /var/log/pia.log" >> $CONFIGFILE
 		echo -n $(basename $CONFIGFILE | cut -d '.' -f 1)" " >> $VPNPATH/servers.txt
@@ -68,7 +68,7 @@ fforward()						# Forward a port.
 {
 	echo -n "$PROMPT Forwarding a port..."
 	sleep 1.5
-	if [ ! -f $VPNPATH/client_id ];then head -n 100 /dev/urandom | sha256sum | tr -d " -" > $VPNPATH/client_id;fi
+	if [ ! -f $VPNPATH/client_id ];then head -n 100 /dev/urandom | sha256 | tr -d " -" > $VPNPATH/client_id;fi
 	while [ $(echo $FORWARDEDPORT | wc -c) -lt 3 ];do
 		FORWARDEDPORT=$(curl -s -m 4 "http://209.222.18.222:2000/?client_id=$(cat $VPNPATH/client_id)" | cut -d ':' -f 2 | cut -d '}' -f 1)
 	done
@@ -79,63 +79,73 @@ fnewport()						# Change port forwarded.
 	NEWPORT=1
 	PORTFORWARD=1
 	mv $VPNPATH/client_id $VPNPATH/client_id.bak
-	head -n 100 /dev/urandom | sha256sum | tr -d " -" > $VPNPATH/client_id
+	head -n 100 /dev/urandom | sha256 | tr -d " -" > $VPNPATH/client_id
 }
 
 ffirewall()						# Set up iptables firewall rules to only allow traffic on tunneled interface and (optionally) within LAN.
 {
-	fresetfirewall
-	LAN=$(ip route show | grep default | awk '{print $3 }' | cut -d '.' -f 1-3)".0/24"
-	DEFAULTDEVICE=$(ip route show | grep default | awk '{print $5}')
-	VPNDEVICE=$(echo "$PLOG" | grep 'TUN/TAP device' | awk '{print $8}')
-	VPNPORT=$(cat $VPNPATH/$CONFIG | grep 'remote ' | awk '{print $3}')
-	PROTO=$(cat $VPNPATH/$CONFIG | grep proto | awk '{print $2}')
 
-	iptables -P OUTPUT DROP																# default policy for outgoing packets
-	iptables -P INPUT DROP																# default policy for incoming packets
-	iptables -P FORWARD DROP															# default policy for forwarded packets
-
-	# allowed outputs
-	iptables -A OUTPUT -o lo -j ACCEPT													# enable localhost out
-	iptables -A OUTPUT -o $VPNDEVICE -j ACCEPT											# enable outgoing connections on tunnel
-	if [[ "$PROTO" == "udp" ]];then
-		iptables -A OUTPUT -o $DEFAULTDEVICE -p udp --dport $VPNPORT -j ACCEPT			# enable port for communicating with PIA on default device
-	else
-		iptables -A OUTPUT -o $DEFAULTDEVICE -p tcp --dport $VPNPORT -j ACCEPT
-	fi
-
-	# allowed inputs
-	iptables -A INPUT -i lo -j ACCEPT													# enable localhost in
-	iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT					# enable requested packets on tunnel
-
-	if [ $PORTFORWARD -eq 1 ];then
-		iptables -A INPUT -i $VPNDEVICE -p tcp --dport $FORWARDEDPORT -j ACCEPT			# enable port forwarding
-		iptables -A INPUT -i $VPNDEVICE -p udp --dport $FORWARDEDPORT -j ACCEPT
-	fi
-
-	if [ $FLAN -eq 1 ];then
-		iptables -A OUTPUT -o $DEFAULTDEVICE -d $LAN -j ACCEPT							# enable incoming and outgoing connections within LAN (potentially dangerous!)
-		iptables -A INPUT -i $DEFAULTDEVICE -s $LAN -j ACCEPT
-	fi
+    if [ -f /etc/ipfw.rules ]; then
+	service ipfw restart
 	echo "$INFO Firewall enabled."
+    else	
+	echo "$ERROR NO Firewall enabled."
+    fi
+    
+    # fresetfirewall
+    # LAN=$(ip route show | grep default | awk '{print $3 }' | cut -d '.' -f 1-3)".0/24"
+    # DEFAULTDEVICE=$(ip route show | grep default | awk '{print $5}')
+    # VPNDEVICE=$(echo "$PLOG" | grep 'TUN/TAP device' | awk '{print $8}')
+    # VPNPORT=$(cat $VPNPATH/$CONFIG | grep 'remote ' | awk '{print $3}')
+    # PROTO=$(cat $VPNPATH/$CONFIG | grep proto | awk '{print $2}')
+    
+    # iptables -P OUTPUT DROP																# default policy for outgoing packets
+    # iptables -P INPUT DROP																# default policy for incoming packets
+    # iptables -P FORWARD DROP															# default policy for forwarded packets
+    
+    # # allowed outputs
+    # iptables -A OUTPUT -o lo -j ACCEPT													# enable localhost out
+    # iptables -A OUTPUT -o $VPNDEVICE -j ACCEPT											# enable outgoing connections on tunnel
+    # if [[ "$PROTO" == "udp" ]];then
+    # 	iptables -A OUTPUT -o $DEFAULTDEVICE -p udp --dport $VPNPORT -j ACCEPT			# enable port for communicating with PIA on default device
+    # else
+    # 	iptables -A OUTPUT -o $DEFAULTDEVICE -p tcp --dport $VPNPORT -j ACCEPT
+    # fi
+    
+    # # allowed inputs
+    # iptables -A INPUT -i lo -j ACCEPT													# enable localhost in
+    # iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT					# enable requested packets on tunnel
+    
+    # if [ $PORTFORWARD -eq 1 ];then
+    # 	iptables -A INPUT -i $VPNDEVICE -p tcp --dport $FORWARDEDPORT -j ACCEPT			# enable port forwarding
+    # 	iptables -A INPUT -i $VPNDEVICE -p udp --dport $FORWARDEDPORT -j ACCEPT
+    # fi
+    
+    # if [ $FLAN -eq 1 ];then
+    # 	iptables -A OUTPUT -o $DEFAULTDEVICE -d $LAN -j ACCEPT							# enable incoming and outgoing connections within LAN (potentially dangerous!)
+    # 	iptables -A INPUT -i $DEFAULTDEVICE -s $LAN -j ACCEPT
+    # fi
+    # echo "$INFO Firewall enabled."
 }
 
 fresetfirewall()
 {
-	iptables --policy INPUT ACCEPT
-	iptables --policy OUTPUT ACCEPT
-	iptables --policy FORWARD ACCEPT
-	iptables -Z
-	iptables -F
-	iptables -X
+    # iptables --policy INPUT ACCEPT
+    # iptables --policy OUTPUT ACCEPT
+    # iptables --policy FORWARD ACCEPT
+    # iptables -Z
+    # iptables -F
+    # iptables -X
+    DUMMY=""
+    
 }
 
 flockdown()
 {
 	fresetfirewall
-	iptables -P OUTPUT DROP
-	iptables -P INPUT DROP
-	iptables -P FORWARD DROP
+	# iptables -P OUTPUT DROP
+	# iptables -P INPUT DROP
+	# iptables -P FORWARD DROP
 }
 
 fhelp()						# Help function.
@@ -333,7 +343,8 @@ fconnect()						# Main function
 	fi
 
 	echo -n "$PROMPT Connecting to $BOLD$GREEN$SERVERNAME$RESET, Please wait..."
-	cd $VPNPATH && openvpn --config $CONFIG --daemon
+	cd $VPNPATH && openvpn --cd $VPNPATH --config $CONFIG --daemon openvpn --writepid /var/run/openvpn.pid
+	##/usr/local/sbin/openvpn --cd /usr/local/etc/openvpn --config /usr/local/etc/openvpn/openvpn.conf --writepid /var/run/openvpn.pid
 	VPNPID=$(ps aux | grep openvpn | grep root | grep -v grep | awk '{print $2}')
 
 	fchecklog
@@ -554,7 +565,7 @@ ERROR=" [$BOLD$RED"'X'"$RESET]"
 PROMPT=" [$BOLD$BLUE>$RESET]"
 
 						# This is where we will store PIA openVPN files and user config.
-VPNPATH='/etc/openvpn/pia'
+VPNPATH='/usr/local/etc/openvpn/pia'
 
 						# Initialize switches.
 PORTFORWARD=0
@@ -595,7 +606,7 @@ fi
 if [ $UNKNOWNOS -eq 1 ];then
 	command -v openvpn >/dev/null 2>&1 || MISSINGDEP=1
 	command -v openssl >/dev/null 2>&1 || MISSINGDEP=1
-	command -v iptables >/dev/null 2>&1 || MISSINGDEP=1
+	command -v ipfw >/dev/null 2>&1 || MISSINGDEP=1
 	command -v curl >/dev/null 2>&1 || MISSINGDEP=1
 	command -v unzip >/dev/null 2>&1 || MISSINGDEP=1
 	if [ $MISSINGDEP -eq 1 ];then
