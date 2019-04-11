@@ -1,3 +1,3 @@
 install:
-	cp pia.sh /usr/bin/pia
-	chmod +x /usr/bin/pia
+	install pia.sh /usr/local/bin
+	chmod +x /usr/local/bin/pia.sh
