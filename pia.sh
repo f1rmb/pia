@@ -58,8 +58,15 @@ fupdate()						# Update the PIA openvpn files.
 		      ((++CNT))
 		done
 		echo -e "auth-nocache\nlog /var/log/pia.log" >> $CONFIGFILE
-		echo -n $(basename $CONFIGFILE | cut -d '.' -f 1)" " >> $VPNPATH/servers.txt
-		cat $CONFIGFILE | grep .com | awk '{print $2}' >> $VPNPATH/servers.txt
+		
+		SERVER_NAME=$(echo -n $(basename $CONFIGFILE | cut -d '.' -f 1))
+		SERVER_URL=$(grep remote $CONFIGFILE | grep -v remote\- | cut -d\  -f 2)
+		
+		echo "$SERVER_NAME $SERVER_URL" >> $VPNPATH/servers.txt
+		
+		#echo -n $(basename $CONFIGFILE | cut -d '.' -f 1)" " >> $VPNPATH/servers.txt
+		#cat $CONFIGFILE | grep .com | awk '{print $2}' >> $VPNPATH/servers.txt
+		
 	done
 	echo -e "\r$INFO Files Updated.                     "
 }
@@ -343,7 +350,7 @@ fconnect()						# Main function
 	fi
 
 	echo -n "$PROMPT Connecting to $BOLD$GREEN$SERVERNAME$RESET, Please wait..."
-	cd $VPNPATH && openvpn --cd $VPNPATH --config $CONFIG --daemon openvpn --writepid /var/run/openvpn.pid
+	cd $VPNPATH && openvpn --cd $VPNPATH --config $CONFIG --daemon openvpn --writepid /var/run/openvpn.pid --mute-replay-warnings
 	##/usr/local/sbin/openvpn --cd /usr/local/etc/openvpn --config /usr/local/etc/openvpn/openvpn.conf --writepid /var/run/openvpn.pid
 	VPNPID=$(ps aux | grep openvpn | grep root | grep -v grep | awk '{print $2}')
 
