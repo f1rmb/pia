@@ -239,17 +239,17 @@ flist()						# List available servers.
 	for i in $(seq $(cat $VPNPATH/servers.txt | wc -l));do
 		echo -n " $BOLD$RED[$RESET$i$BOLD$RED]$RESET "
 		SERVERNAME=$(cat $VPNPATH/servers.txt | head -n $i | tail -n 1 | awk '{print $1}')
-		case $SERVERNAME in
-			"Netherlands") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"Switzerland") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"CA_Toronto") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"CA_Montreal") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"CA_Vancouver") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"Romania") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"Israel") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"Sweden") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"France") echo $BOLD$GREEN$SERVERNAME$RESET;;
-			"Germany") echo $BOLD$GREEN$SERVERNAME$RESET;;
+		case ${SERVERNAME,,} in
+			"netherlands") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"switzerland") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"ca_toronto") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"ca_montreal") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"ca_vancouver") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"romania") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"israel") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"sweden") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"france") echo $BOLD$GREEN$SERVERNAME$RESET;;
+			"germany") echo $BOLD$GREEN$SERVERNAME$RESET;;
 			*) echo $SERVERNAME;;
 		esac
 	done
@@ -456,17 +456,17 @@ fconnect()						# Main function
 				echo -e "\r$PROMPT Using port forwarding identity $BOLD$CYAN$(cat $VPNPATH/client_id)$RESET"
 			fi
 		fi
-		case $SERVERNAME in
-			"Netherlands") fforward;;
-			"Switzerland") fforward;;
-			"CA_Toronto") fforward;;
-			"CA_Montreal") fforward;;
-			"Romania") fforward;;
-			"Israel") fforward;;
-			"Sweden") fforward;;
-			"France") fforward;;
-			"Germany") fforward;;
-			"CA_Vancouver") fforward;;
+		case ${SERVERNAME,,} in
+			"netherlands") fforward;;
+			"switzerland") fforward;;
+			"ca_toronto") fforward;;
+			"ca_montreal") fforward;;
+			"romania") fforward;;
+			"israel") fforward;;
+			"sweden") fforward;;
+			"france") fforward;;
+			"germany") fforward;;
+			"ca_vancouver") fforward;;
 			*) NOPORT=1;;
 		esac
 		if [ $NOPORT -eq 0 ];then
