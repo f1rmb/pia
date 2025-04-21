@@ -46,7 +46,7 @@ fupdate()						# Update the PIA openvpn files.
 	echo -n "$PROMPT Updating PIA openvpn files..."
 	rm -rf $VPNPATH/*.ovpn $VPNPATH/servers.txt $VPNPATH/*.crt $VPNPATH/*.pem
 	curl -so $VPNPATH/pia.zip $DOWNURL
-	echo "$CONFIGNUM $DOWNURL $(curl -sI $DOWNURL | grep Last-Modified | cut -d ' ' -f 2-)" > $VPNPATH/configversion.txt
+	echo "$CONFIGNUM $DOWNURL $(curl -sI $DOWNURL | grep last-modified | cut -d ' ' -f 2-)" > $VPNPATH/configversion.txt
 	cd $VPNPATH && unzip -q pia.zip && rm pia.zip
 	cd $VPNPATH && for CONFIGFILE in *.ovpn;do mv "$CONFIGFILE" $(echo $CONFIGFILE | tr ' ' '_') &>/dev/null;done
 	OLDS=("auth-user-pass" "crl-verify crl.rsa.2048.pem" "crl-verify crl.rsa.4096.pem" "ca ca.rsa.2048.crt" "ca ca.rsa.4096.crt" "verb 1")
@@ -281,7 +281,7 @@ fping()						# Get latency to VPN server.
 {
 	PINGINT=0
 	while [ $PINGINT -lt 1 ];do
-		PING=$(ping -c 3 $1 | grep rtt | cut -d '/' -f 4 | awk '{print $3}')
+		PING=$(ping -c 3 $1 | grep round-trip | cut -d '/' -f 4 | awk '{print $3}')
 		PINGINT=$(echo $PING | cut -d '.' -f 1)
 	done
 	
@@ -308,7 +308,7 @@ fcheckupdate()						# Check if a new config zip is available and download.
 	CONFIGVERSION=$(cat $VPNPATH/configversion.txt | cut -d ' ' -f 3-)
 	CONFIGMODIFIED=''
 	while [ $(echo $CONFIGMODIFIED | wc -c) -lt 6 ];do
-		CONFIGMODIFIED=$(curl -sI $CONFIGURL | grep Last-Modified | cut -d ' ' -f 2-)
+		CONFIGMODIFIED=$(curl -sI $CONFIGURL | grep last-modified | cut -d ' ' -f 2-)
 	done
 	if [ $(echo $CONFIGMODIFIED | wc -c) -gt 6 ];then
 		if [ "$CONFIGVERSION" != "$CONFIGMODIFIED" ];then
@@ -693,3 +693,6 @@ fi
 while [ true ];do
 	fconnect
 done
+
+exit 0
+
