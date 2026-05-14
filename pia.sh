@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/env bash
 
 ## pia v0.5 Copyright (C) 2017 d4rkcat (thed4rkcat@yandex.com)
 #
@@ -53,20 +53,20 @@ fupdate()						# Update the PIA openvpn files.
 	NEWS=("auth-user-pass $VPNPATH/pass.txt" "crl-verify $VPNPATH/crl.rsa.2048.pem" "crl-verify $VPNPATH/crl.rsa.4096.pem" "ca $VPNPATH/ca.rsa.2048.crt" "ca $VPNPATH/ca.rsa.4096.crt" "verb 2")
 	for CONFIGFILE in $VPNPATH/*.ovpn;do
 		CNT=0
-		for OLD in "${OLDS[@]}";do 
+		for OLD in "${OLDS[@]}";do
 		      sed -i -e "s%$OLD.*%${NEWS[$CNT]}%g" $CONFIGFILE
 		      ((++CNT))
 		done
 		echo -e "auth-nocache\nlog /var/log/pia.log" >> $CONFIGFILE
-		
+
 		SERVER_NAME=$(echo -n $(basename $CONFIGFILE | cut -d '.' -f 1))
 		SERVER_URL=$(grep remote $CONFIGFILE | grep -v remote\- | cut -d\  -f 2)
-		
+
 		echo "$SERVER_NAME $SERVER_URL" >> $VPNPATH/servers.txt
-		
+
 		#echo -n $(basename $CONFIGFILE | cut -d '.' -f 1)" " >> $VPNPATH/servers.txt
 		#cat $CONFIGFILE | grep .com | awk '{print $2}' >> $VPNPATH/servers.txt
-		
+
 	done
 	echo -e "\r$INFO Files Updated.                     "
 }
@@ -95,21 +95,21 @@ ffirewall()						# Set up iptables firewall rules to only allow traffic on tunne
     if [ -f /etc/ipfw.rules ]; then
 	service ipfw restart
 	echo "$INFO Firewall enabled."
-    else	
+    else
 	echo "$ERROR NO Firewall enabled."
     fi
-    
+
     # fresetfirewall
     # LAN=$(ip route show | grep default | awk '{print $3 }' | cut -d '.' -f 1-3)".0/24"
     # DEFAULTDEVICE=$(ip route show | grep default | awk '{print $5}')
     # VPNDEVICE=$(echo "$PLOG" | grep 'TUN/TAP device' | awk '{print $8}')
     # VPNPORT=$(cat $VPNPATH/$CONFIG | grep 'remote ' | awk '{print $3}')
     # PROTO=$(cat $VPNPATH/$CONFIG | grep proto | awk '{print $2}')
-    
+
     # iptables -P OUTPUT DROP																# default policy for outgoing packets
     # iptables -P INPUT DROP																# default policy for incoming packets
     # iptables -P FORWARD DROP															# default policy for forwarded packets
-    
+
     # # allowed outputs
     # iptables -A OUTPUT -o lo -j ACCEPT													# enable localhost out
     # iptables -A OUTPUT -o $VPNDEVICE -j ACCEPT											# enable outgoing connections on tunnel
@@ -118,16 +118,16 @@ ffirewall()						# Set up iptables firewall rules to only allow traffic on tunne
     # else
     # 	iptables -A OUTPUT -o $DEFAULTDEVICE -p tcp --dport $VPNPORT -j ACCEPT
     # fi
-    
+
     # # allowed inputs
     # iptables -A INPUT -i lo -j ACCEPT													# enable localhost in
     # iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT					# enable requested packets on tunnel
-    
+
     # if [ $PORTFORWARD -eq 1 ];then
     # 	iptables -A INPUT -i $VPNDEVICE -p tcp --dport $FORWARDEDPORT -j ACCEPT			# enable port forwarding
     # 	iptables -A INPUT -i $VPNDEVICE -p udp --dport $FORWARDEDPORT -j ACCEPT
     # fi
-    
+
     # if [ $FLAN -eq 1 ];then
     # 	iptables -A OUTPUT -o $DEFAULTDEVICE -d $LAN -j ACCEPT							# enable incoming and outgoing connections within LAN (potentially dangerous!)
     # 	iptables -A INPUT -i $DEFAULTDEVICE -s $LAN -j ACCEPT
@@ -144,7 +144,7 @@ fresetfirewall()
     # iptables -F
     # iptables -X
     DUMMY=""
-    
+
 }
 
 flockdown()
@@ -173,7 +173,7 @@ fhelp()						# Help function.
 	-v	- Display verbose information.
 	-h	- Display this help.
 
-	Examples: 
+	Examples:
 	pia -dps 6  	- Change DNS, forward a port and connect to CA_Montreal.
 	pia -nfv	- Forward a new port, run firewall and be verbose.
 """
@@ -234,7 +234,7 @@ flist()						# List available servers.
 	if [ ! -f $VPNPATH/servers.txt ];then
 		fupdate
 	fi
-	
+
 	echo "$INFO$BOLD$GREEN Green$RESET servers allow port forwarding."
 	for i in $(seq $(cat $VPNPATH/servers.txt | wc -l));do
 		echo -n " $BOLD$RED[$RESET$i$BOLD$RED]$RESET "
@@ -284,7 +284,7 @@ fping()						# Get latency to VPN server.
 		PING=$(ping -c 3 $1 | grep round-trip | cut -d '/' -f 4 | awk '{print $3}')
 		PINGINT=$(echo $PING | cut -d '.' -f 1)
 	done
-	
+
 	SPEEDCOLOR=$BOLD$GREEN
 	SPEEDNAME="fast"
 	if [ $PINGINT -gt 39 ];then
@@ -420,7 +420,7 @@ fconnect()						# Main function
 			MYIP=$(cat /tmp/ip.txt)
 			sleep 0.3
 		done
-		
+
 		if [ $(echo $NEWIP | wc -c) -gt 2 ];then
 			WHOISOLD="$(whois $MYIP)"
 			WHOISNEW="$(whois $NEWIP)"
@@ -428,7 +428,7 @@ fconnect()						# Main function
 			COUNTRYNEW=$(echo "$WHOISNEW" | grep country | head -n 1)
 			DESCROLD="$(echo "$WHOISOLD" | grep descr)"$RESET
 			DESCRNEW="$(echo "$WHOISNEW" | grep descr)"$RESET
-			
+
 			echo -e "\r$PROMPT Old IP:$RED$BOLD $MYIP"
 			if [ $(echo $COUNTRYOLD | wc -c) -gt 8 ];then
 				while IFS= read -r LNE ;do echo "     $LNE";done <<< "$COUNTRYOLD"
@@ -509,7 +509,7 @@ fconnect()						# Main function
 		fi
 	else
 		fupdate
-	fi	
+	fi
 	fvpnreset
 }
 
@@ -525,7 +525,7 @@ flogwatcher()						# Check the log for new entries
 			return 0
 		fi
 	done
-	
+
 }
 
 fgetip()						# Get external IP
@@ -538,11 +538,11 @@ fgetip()						# Get external IP
 
 fdecryptcreds()
 {
-	if [ $(cat $VPNPATH/pass.txt 2>/dev/null | wc -c) -lt 6 ];then	
+	if [ $(cat $VPNPATH/pass.txt 2>/dev/null | wc -c) -lt 6 ];then
 		if [ $(cat $VPNPATH/pass.enc | wc -c) -gt 3 ];then
 			echo "$PROMPT Decrypting creds.."
 			cat $VPNPATH/pass.enc | openssl base64 -d | openssl enc -d -aes-256-cbc > $VPNPATH/pass.txt
-			chmod 400 $VPNPATH/pass.txt && CREDS="$(cat $VPNPATH/pass.txt 2>/dev/null)" 
+			chmod 400 $VPNPATH/pass.txt && CREDS="$(cat $VPNPATH/pass.txt 2>/dev/null)"
 			if [ $ENCRYPT -eq 0 ];then
 				rm $VPNPATH/pass.enc
 			fi
@@ -695,4 +695,3 @@ while [ true ];do
 done
 
 exit 0
-
